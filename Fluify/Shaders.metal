@@ -138,3 +138,100 @@ kernel void advect_kernel (texture2d<float, access::read_write> currentVelocitie
     
     currentVelocities.write(finalVel, curr);
 }
+
+kernel void calculate_divergence (texture2d<float, access::read> currentVelocities [[texture(0)]], texture2d<float, access::write> divergence [[texture(1)]], texture2d<float, access::write> pressure [[texture(2)]], uint2 grid_index [[thread_position_in_grid]]) {
+    
+    float size = currentVelocities.get_width();
+
+    float h = 1.0f / size;
+
+    uint2 curr = grid_index;
+    uint2 left = uint2(curr.x - 1, curr.y);
+    uint2 right = uint2(curr.x + 1, curr.y);
+    uint2 down = uint2(curr.x, curr.y - 1);
+    uint2 up = uint2(curr.x, curr.y + 1);
+    float div = h * -0.5f *(currentVelocities.read(right).x - currentVelocities.read(left).x +  currentVelocities.read(up).y - currentVelocities.read(down).y);
+    
+    divergence.write(float4(div, 0.0, 0.0, 0.0), curr);
+    pressure.write(float4(0.0, 0.0, 0.0, 0.0), grid_index);
+
+}
+
+kernel void divergence_diffusion (texture2d<float, access::read_write> pressure [[texture(0)]], texture2d<float, access::read> divergence [[texture(1)]],  uint2 grid_index [[thread_position_in_grid]]) {
+    
+    uint2 curr = grid_index;
+    uint2 left = uint2(curr.x - 1, curr.y);
+    uint2 right = uint2(curr.x + 1, curr.y);
+    uint2 down = uint2(curr.x, curr.y - 1);
+    uint2 up = uint2(curr.x, curr.y + 1);
+    
+   
+    float pres = (divergence.read(curr).r + pressure.read(left).r + pressure.read(right).r + pressure.read(down).r + pressure.read(up).r)/4.0;
+    
+    pressure.write(float4(pres, 0.0, 0.0, 0.0),curr);
+}
+
+
+kernel void clear_divergence (texture2d<float, access::read_write> currentVelocities, texture2d<float, access::read_write> pressure [[texture(1)]], uint2 grid_index [[thread_position_in_grid]]) {
+    float size = currentVelocities.get_width();
+
+    float h = 1.0f / size;
+    uint2 curr = grid_index;
+    uint2 left = uint2(curr.x - 1, curr.y);
+    uint2 right = uint2(curr.x + 1, curr.y);
+    uint2 down = uint2(curr.x, curr.y - 1);
+    uint2 up = uint2(curr.x, curr.y + 1);
+    
+    float4 curVel = currentVelocities.read(curr);
+    float2 dif = float2(0.0, 0.0);
+    dif.x = 0.5 * (pressure.read(right).x - pressure.read(left).x)/h;
+    dif.y = 0.5 * (pressure.read(up).x - pressure.read(down).x)/h;
+
+    float4 newVel = float4(curVel.x - dif.x, curVel.y - dif.y, 0.0, 0.0);
+    currentVelocities.write(newVel, curr);
+}
+
+kernel void set_bnds(texture2d<float, access::read_write> grid [[texture(0)]],
+                                 uint2 gid [[thread_position_in_grid]], device int* bv [[buffer(0)]]) {
+    // Assuming 'size' is the dimension of the texture
+    uint size = grid.get_width();
+    uint N = size - 2;
+    
+    int b = bv[0];
+
+    // Get the indices within the texture
+    uint2 texCoord = gid + uint2(1, 1);
+
+    // Set Wall Values to their nearest neighbour
+    if (texCoord.x == 0 || texCoord.x == size - 1) {
+        float4 neighborValue = b == 1 ? -grid.read(uint2(texCoord.x + (texCoord.x == 0 ? 1 : -1), texCoord.y)) :
+                                       grid.read(uint2(texCoord.x + (texCoord.x == 0 ? 1 : -1), texCoord.y));
+        grid.write(neighborValue, texCoord);
+    }
+    if (texCoord.y == 0 || texCoord.y == size - 1) {
+        float4 neighborValue = b == 2 ? -grid.read(uint2(texCoord.x, texCoord.y + (texCoord.y == 0 ? 1 : -1))) :
+                                       grid.read(uint2(texCoord.x, texCoord.y + (texCoord.y == 0 ? 1 : -1)));
+        grid.write(neighborValue, texCoord);
+    }
+
+    // Synchronize threads to ensure all writes are complete
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+
+    // Set Corners to the average of two nearby squares
+    if (texCoord.x == 0 && texCoord.y == 0) {
+        float4 cornerValue = 0.5f * (grid.read(uint2(1, 0)) + grid.read(uint2(0, 1)));
+        grid.write(cornerValue, texCoord);
+    }
+    if (texCoord.x == 0 && texCoord.y == size - 1) {
+        float4 cornerValue = 0.5f * (grid.read(uint2(1, size - 1)) + grid.read(uint2(0, size - 2)));
+        grid.write(cornerValue, texCoord);
+    }
+    if (texCoord.x == size - 1 && texCoord.y == 0) {
+        float4 cornerValue = 0.5f * (grid.read(uint2(size - 2, 0)) + grid.read(uint2(size - 1, 1)));
+        grid.write(cornerValue, texCoord);
+    }
+    if (texCoord.x == size - 1 && texCoord.y == size - 1) {
+        float4 cornerValue = 0.5f * (grid.read(uint2(size - 2, size - 1)) + grid.read(uint2(size - 1, size - 2)));
+        grid.write(cornerValue, texCoord);
+    }
+}
