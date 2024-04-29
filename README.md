@@ -9,7 +9,7 @@ This is an app showcasing a simple **Fluid Simulation Renderer** built using Met
 
 ## Final Result
 
-https://github.com/AJTech2002/Fluidify/assets/25098044/cd4ed03b-6025-4d23-a35f-a74a82cdf8af
+https://github.com/AJTech2002/Fluidify/assets/25098044/a9b52989-c48c-47f9-8d6c-b4aa511a5c5f
 
 ## Fluid Simulation Steps
 
