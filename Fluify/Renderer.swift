@@ -6,6 +6,7 @@
 //
 
 import MetalKit
+import SwiftUI
 
 class Renderer : NSObject, MTKViewDelegate {
 
@@ -28,8 +29,11 @@ class Renderer : NSObject, MTKViewDelegate {
     let vertexBuffer : MTLBuffer
     let textureCoordBuffer : MTLBuffer
     
+    let fluidRenderer : FluidRenderer
+    
     init(_ parent : ContentView) {
         self.parent = parent
+        
         if let metalDevice = MTLCreateSystemDefaultDevice() {
             self.metalDevice = metalDevice
         }
@@ -48,11 +52,16 @@ class Renderer : NSObject, MTKViewDelegate {
         catch {
             fatalError()
         }
+   
+        
+        fluidRenderer = FluidRenderer(metalDevice: metalDevice)
         
         // Setup Quad to Render to Screen
         vertexBuffer = metalDevice.makeBuffer(bytes: screen_verts, length: screen_verts.count * MemoryLayout<SIMD2<Float>>.stride, options: [])!
         textureCoordBuffer = metalDevice.makeBuffer(bytes: screen_tex_coords, length: screen_tex_coords.count * MemoryLayout<SIMD2<Float>>.stride, options: [])!
         
+        
+
     
         super.init()
     }
@@ -61,13 +70,31 @@ class Renderer : NSObject, MTKViewDelegate {
         
     }
     
+    var outputTexture : MTLTexture?
+    
     func draw(in view: MTKView) {
         
         guard let drawable = view.currentDrawable else {
             return
         }
         
+        // Create an output texture if we don't have one
+        if (outputTexture == nil) {
+            let textureDescriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .rgba8Unorm,
+                                                                             width: drawable.texture.width,
+                                                                             height: drawable.texture.height,
+                                                                             mipmapped: false)
+            textureDescriptor.usage = [.shaderWrite, .shaderRead]
+            
+            outputTexture = metalDevice.makeTexture(descriptor: textureDescriptor)
+            fluidRenderer.setOutputTexture(output: outputTexture)
+        }
+        
         let commandBuffer = metalCommandQueue.makeCommandBuffer()
+        
+        fluidRenderer.runCompute(commandBuffer: commandBuffer!, view: view)
+        
+        // Render to screen as rect for post processing
         
         let renderPassDescriptor = view.currentRenderPassDescriptor
         renderPassDescriptor?.colorAttachments[0].clearColor = MTLClearColor()
@@ -82,6 +109,8 @@ class Renderer : NSObject, MTKViewDelegate {
         renderEncoder?.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
         renderEncoder?.setVertexBuffer(textureCoordBuffer, offset: 0, index: 1)
         
+        renderEncoder?.setFragmentTexture(outputTexture, index: 0)
+        
         // Draw basic screen rect
         renderEncoder?.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6)
 
@@ -92,4 +121,8 @@ class Renderer : NSObject, MTKViewDelegate {
         
     }
     
+}
+
+#Preview {
+    ContentView()
 }

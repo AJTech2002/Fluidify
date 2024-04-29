@@ -13,6 +13,9 @@
 		059C34072BDDB1E100F1AFCE /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 059C34062BDDB1E100F1AFCE /* Preview Assets.xcassets */; };
 		059C340E2BDDB43C00F1AFCE /* Renderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 059C340D2BDDB43C00F1AFCE /* Renderer.swift */; };
 		059C34142BDDCA4200F1AFCE /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = 059C34132BDDCA4200F1AFCE /* Shaders.metal */; };
+		059C34162BDF0DC800F1AFCE /* Compute.swift in Sources */ = {isa = PBXBuildFile; fileRef = 059C34152BDF0DC800F1AFCE /* Compute.swift */; };
+		059C34182BDF104E00F1AFCE /* FluidRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 059C34172BDF104E00F1AFCE /* FluidRenderer.swift */; };
+		059C341A2BDF286F00F1AFCE /* PencilInteractionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 059C34192BDF286F00F1AFCE /* PencilInteractionHandler.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -24,6 +27,9 @@
 		059C340D2BDDB43C00F1AFCE /* Renderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Renderer.swift; sourceTree = "<group>"; };
 		059C340F2BDDBE8500F1AFCE /* Fluify-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Fluify-Bridging-Header.h"; sourceTree = "<group>"; };
 		059C34132BDDCA4200F1AFCE /* Shaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Shaders.metal; sourceTree = "<group>"; };
+		059C34152BDF0DC800F1AFCE /* Compute.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Compute.swift; sourceTree = "<group>"; };
+		059C34172BDF104E00F1AFCE /* FluidRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FluidRenderer.swift; sourceTree = "<group>"; };
+		059C34192BDF286F00F1AFCE /* PencilInteractionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PencilInteractionHandler.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -40,6 +46,7 @@
 		059C33F32BDDB1E000F1AFCE = {
 			isa = PBXGroup;
 			children = (
+				059C34172BDF104E00F1AFCE /* FluidRenderer.swift */,
 				059C33FE2BDDB1E000F1AFCE /* Fluify */,
 				059C33FD2BDDB1E000F1AFCE /* Products */,
 			);
@@ -63,6 +70,8 @@
 				059C340D2BDDB43C00F1AFCE /* Renderer.swift */,
 				059C340F2BDDBE8500F1AFCE /* Fluify-Bridging-Header.h */,
 				059C34132BDDCA4200F1AFCE /* Shaders.metal */,
+				059C34152BDF0DC800F1AFCE /* Compute.swift */,
+				059C34192BDF286F00F1AFCE /* PencilInteractionHandler.swift */,
 			);
 			path = Fluify;
 			sourceTree = "<group>";
@@ -149,7 +158,10 @@
 				059C34022BDDB1E100F1AFCE /* ContentView.swift in Sources */,
 				059C340E2BDDB43C00F1AFCE /* Renderer.swift in Sources */,
 				059C34142BDDCA4200F1AFCE /* Shaders.metal in Sources */,
+				059C34182BDF104E00F1AFCE /* FluidRenderer.swift in Sources */,
 				059C34002BDDB1E100F1AFCE /* FluifyApp.swift in Sources */,
+				059C34162BDF0DC800F1AFCE /* Compute.swift in Sources */,
+				059C341A2BDF286F00F1AFCE /* PencilInteractionHandler.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

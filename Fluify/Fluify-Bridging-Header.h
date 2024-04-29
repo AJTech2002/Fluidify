@@ -8,4 +8,10 @@
 
 #include <simd/simd.h>
 
+struct PencilInput {
+    vector_float2 point;
+    vector_float2 direction;
+    float radius;
+};
+
 #endif /* definitions_h */
