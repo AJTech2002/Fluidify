@@ -1,10 +1,11 @@
 # Fluidify
-This is an app showcasing a simple **Fluid Simulation Renderer** using the Navier Stokes equation based on this [paper](http://graphics.cs.cmu.edu/nsp/course/15-464/Fall09/papers/StamFluidforGames.pdf). The idea is to allow image deformation through fluid simulations similar to *Procreate's Liquify* tool.
+This is an app showcasing a simple **Fluid Simulation Renderer** built using Metal for the iPad and Apple Pencil using the Navier Stokes equation based on this [paper](http://graphics.cs.cmu.edu/nsp/course/15-464/Fall09/papers/StamFluidforGames.pdf). The idea is to allow image deformation through fluid simulations similar to *Procreate's Liquify* tool.
 
 ## Technology
+- SwiftUI and Swift for iPad Build
 - Apple Pencil support for drawing velocity and color directly to a texture
 - Custom rendering engine in Metal
-- Realtime fluid simulation running completely on Compute Shaders 
+- Realtime fluid simulation running on Compute Shaders 
 
 ## Final Result
 
