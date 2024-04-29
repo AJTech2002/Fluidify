@@ -25,7 +25,7 @@ class DrawingUIView: UIView {
             let location = touch.preciseLocation(in: self)
             let normalizedLocation = CGPoint(x: location.x / bounds.width, y: location.y / bounds.height)
 
-            FluidRenderer.instance.addInput(screenPoint: float2(Float(normalizedLocation.x), Float(normalizedLocation.y)), direction: float2(Float(azimuthUnitVector.dx), Float(azimuthUnitVector.dy)), radius: Float(pressure))
+            FluidRenderer.instance.addInput(screenPoint: float2(Float(normalizedLocation.x), Float(normalizedLocation.y)), direction: float2(Float(-azimuthUnitVector.dx), Float(-azimuthUnitVector.dy)), radius: Float(pressure))
             
         }
 }

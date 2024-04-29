@@ -14,4 +14,9 @@ struct PencilInput {
     float radius;
 };
 
+struct DiffusionProperties {
+    float dt;
+    float diffusionRate;
+};
+
 #endif /* definitions_h */

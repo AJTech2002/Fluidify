@@ -14,8 +14,10 @@ struct FluifyApp: App {
         WindowGroup {
             ZStack {
                 ContentView()
+                  
                 DrawingViewWrapper()
-            }
+                    
+            }.frame(width: 500, height: 500)
         }
     }
 }

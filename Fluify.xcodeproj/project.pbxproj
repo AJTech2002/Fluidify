@@ -16,6 +16,7 @@
 		059C34162BDF0DC800F1AFCE /* Compute.swift in Sources */ = {isa = PBXBuildFile; fileRef = 059C34152BDF0DC800F1AFCE /* Compute.swift */; };
 		059C34182BDF104E00F1AFCE /* FluidRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 059C34172BDF104E00F1AFCE /* FluidRenderer.swift */; };
 		059C341A2BDF286F00F1AFCE /* PencilInteractionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 059C34192BDF286F00F1AFCE /* PencilInteractionHandler.swift */; };
+		059C341C2BDF2DDB00F1AFCE /* TextureUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 059C341B2BDF2DDB00F1AFCE /* TextureUtils.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -30,6 +31,7 @@
 		059C34152BDF0DC800F1AFCE /* Compute.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Compute.swift; sourceTree = "<group>"; };
 		059C34172BDF104E00F1AFCE /* FluidRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FluidRenderer.swift; sourceTree = "<group>"; };
 		059C34192BDF286F00F1AFCE /* PencilInteractionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PencilInteractionHandler.swift; sourceTree = "<group>"; };
+		059C341B2BDF2DDB00F1AFCE /* TextureUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextureUtils.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -72,6 +74,7 @@
 				059C34132BDDCA4200F1AFCE /* Shaders.metal */,
 				059C34152BDF0DC800F1AFCE /* Compute.swift */,
 				059C34192BDF286F00F1AFCE /* PencilInteractionHandler.swift */,
+				059C341B2BDF2DDB00F1AFCE /* TextureUtils.swift */,
 			);
 			path = Fluify;
 			sourceTree = "<group>";
@@ -162,6 +165,7 @@
 				059C34002BDDB1E100F1AFCE /* FluifyApp.swift in Sources */,
 				059C34162BDF0DC800F1AFCE /* Compute.swift in Sources */,
 				059C341A2BDF286F00F1AFCE /* PencilInteractionHandler.swift in Sources */,
+				059C341C2BDF2DDB00F1AFCE /* TextureUtils.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

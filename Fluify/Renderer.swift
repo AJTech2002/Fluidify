@@ -80,11 +80,15 @@ class Renderer : NSObject, MTKViewDelegate {
         
         // Create an output texture if we don't have one
         if (outputTexture == nil) {
-            let textureDescriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .rgba8Unorm,
+            print(drawable.texture.width);
+            print(drawable.texture.height);
+
+            let textureDescriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .rgba16Float,
                                                                              width: drawable.texture.width,
                                                                              height: drawable.texture.height,
                                                                              mipmapped: false)
-            textureDescriptor.usage = [.shaderWrite, .shaderRead]
+            textureDescriptor.usage = [.shaderWrite, .shaderRead, .renderTarget]
+        
             
             outputTexture = metalDevice.makeTexture(descriptor: textureDescriptor)
             fluidRenderer.setOutputTexture(output: outputTexture)
