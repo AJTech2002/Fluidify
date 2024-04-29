@@ -83,7 +83,7 @@ class Renderer : NSObject, MTKViewDelegate {
             print(drawable.texture.width);
             print(drawable.texture.height);
 
-            let textureDescriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .rgba16Float,
+            let textureDescriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .bgra8Unorm_srgb,
                                                                              width: drawable.texture.width,
                                                                              height: drawable.texture.height,
                                                                              mipmapped: false)

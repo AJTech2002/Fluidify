@@ -10,17 +10,22 @@ import SwiftUI
 @main
 struct FluifyApp: App {
     
+    
+    
     var body: some Scene {
         WindowGroup {
             ZStack {
                 ContentView()
                   
                 DrawingViewWrapper()
+                
                     
             }.frame(width: 500, height: 500)
         }
     }
 }
+
+
 
 extension CGPoint {
     func distance(to point: CGPoint) -> CGFloat {

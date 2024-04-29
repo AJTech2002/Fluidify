@@ -53,3 +53,47 @@ func createTextureWithSamePropertiesAs(inputTexture: MTLTexture, device: MTLDevi
     
     return device.makeTexture(descriptor: textureDescriptor)
 }
+
+func loadTexture(named imageName: String, into texture: MTLTexture, device: MTLDevice) {
+       guard let image = UIImage(named: imageName) else {
+           print("Failed to load image named \(imageName) from assets.")
+           return
+       }
+       
+       loadTexture(from: image, into: texture, device: device)
+   }
+   
+func loadTexture(from image: UIImage, into texture: MTLTexture, device: MTLDevice) {
+   guard let cgImage = image.cgImage else {
+       print("Failed to get CGImage from UIImage.")
+       return
+   }
+   
+   let textureLoader = MTKTextureLoader(device: device)
+   do {
+       let newTexture = try textureLoader.newTexture(cgImage: cgImage, options: nil)
+       copyTexture(source: newTexture, destination: texture, device: device)
+   } catch {
+       print("Error loading texture:", error)
+   }
+}
+
+func copyTexture(source: MTLTexture, destination: MTLTexture, device: MTLDevice) {
+   let commandQueue = device.makeCommandQueue()!
+   let commandBuffer = commandQueue.makeCommandBuffer()!
+   
+   let blitCommandEncoder = commandBuffer.makeBlitCommandEncoder()!
+   blitCommandEncoder.copy(from: source,
+                            sourceSlice: 0,
+                            sourceLevel: 0,
+                            sourceOrigin: MTLOriginMake(0, 0, 0),
+                            sourceSize: MTLSizeMake(source.width, source.height, source.depth),
+                            to: destination,
+                            destinationSlice: 0,
+                            destinationLevel: 0,
+                            destinationOrigin: MTLOriginMake(0, 0, 0))
+   blitCommandEncoder.endEncoding()
+   
+   commandBuffer.commit()
+   commandBuffer.waitUntilCompleted()
+}

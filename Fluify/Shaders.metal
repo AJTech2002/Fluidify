@@ -43,13 +43,14 @@ float3 DirectionToRGB(float2 direction) {
 fragment float4 fragment_main(Fragment in [[stage_in]],
                               texture2d<float> texture [[texture(0)]]) {
     float4 vel = texture.sample(sampler(), in.texCoord);
-    float2 vel_l = float2(vel.x*10.0, vel.y*10.0);
-    float3 col_ = DirectionToRGB(vel_l);
-    return float4(col_*clamp(length(vel_l), 0.0, 1.0), 1.0);
+//    float2 vel_l = float2(vel.x*10.0, vel.y*10.0);
+//    float3 col_ = DirectionToRGB(vel_l);
+//    return float4(col_*clamp(length(vel_l), 0.0, 1.0), 1.0);
+    return vel;
 }
 
 // Input Kernel (Pencil drawing)
-kernel void input_kernel (texture2d<float, access::write> color_buffer [[texture(0)]], uint2 grid_index [[thread_position_in_grid]], device PencilInput* pencil_input [[buffer(0)]]) {
+kernel void input_kernel (texture2d<float, access::write> color_buffer [[texture(0)]], texture2d<float, access::write> output_texture [[texture(1)]], uint2 grid_index [[thread_position_in_grid]], device PencilInput* pencil_input [[buffer(0)]], device int* drawMode [[buffer(1)]]) {
     
     
     if (pencil_input[0].radius < 0.1) return;
@@ -65,8 +66,11 @@ kernel void input_kernel (texture2d<float, access::write> color_buffer [[texture
     if (distance(g_index, middle) < pixelRadius) {
         
         float2 direction = pencil_input[0].direction;
-   
+            
         color_buffer.write(float4(direction.x , direction.y, 0.0, 0.0), grid_index);
+   
+        output_texture.write(float4(1.0-(pixelRadius/100.0f) , 0.0, pixelRadius/100.0f, 1.0), grid_index);
+       
     }
     
    
@@ -77,6 +81,16 @@ kernel void input_kernel (texture2d<float, access::write> color_buffer [[texture
 float4 lerp(float4 a, float4 b, float t) {
     return a * (1.0 - t) + b * t;
 }
+
+kernel void load_image (texture2d<float, access::write> color_buffer [[texture(0)]], uint2 grid_index [[thread_position_in_grid]]) {
+    
+    float u = float(grid_index.x)/float(color_buffer.get_width());
+    float v = float(grid_index.y)/float(color_buffer.get_height());
+    
+    color_buffer.write(float4(u,v,0.0,1.0), grid_index);
+    
+}
+
 
 // Diffusion Kernel
 kernel void diffuse_kernel (texture2d<float, access::read> currentVelocities [[texture(0)]], texture2d<float, access::read_write> newVelocities [[texture(1)]], uint2 grid_index [[thread_position_in_grid]],
@@ -98,7 +112,7 @@ kernel void diffuse_kernel (texture2d<float, access::read> currentVelocities [[t
 }
 
 
-kernel void advect_kernel (texture2d<float, access::read_write> currentVelocities, uint2 grid_index [[thread_position_in_grid]], device DiffusionProperties* properties [[buffer(0)]]) {
+kernel void advect_kernel (texture2d<float, access::read_write> currentVelocities [[texture(0)]], texture2d<float, access::read_write> advectTexture [[texture(1)]], uint2 grid_index [[thread_position_in_grid]], device DiffusionProperties* properties [[buffer(0)]]) {
     
     float dt = properties[0].dt;
     
@@ -126,17 +140,17 @@ kernel void advect_kernel (texture2d<float, access::read_write> currentVelocitie
    float t1 = y - j0;
    float t0 = 1 - t1;
     
-    float4 veli0j0 = currentVelocities.read(uint2(i0, j0));
-    float4 veli0j1 = currentVelocities.read(uint2(i0, j1));
-    float4 veli1j0 = currentVelocities.read(uint2(i1, j0));
-    float4 veli1j1 = currentVelocities.read(uint2(i1, j1));
+    float4 veli0j0 = advectTexture.read(uint2(i0, j0));
+    float4 veli0j1 = advectTexture.read(uint2(i0, j1));
+    float4 veli1j0 = advectTexture.read(uint2(i1, j0));
+    float4 veli1j1 = advectTexture.read(uint2(i1, j1));
     
     float4 leftV = s0 * (t0 * veli0j0 + t1 * veli0j1);
     float4 rightV = s1 * (t0 * veli1j0 + t1 * veli1j1);
     
     float4 finalVel = leftV + rightV;
     
-    currentVelocities.write(finalVel, curr);
+    advectTexture.write(finalVel, curr);
 }
 
 kernel void calculate_divergence (texture2d<float, access::read> currentVelocities [[texture(0)]], texture2d<float, access::write> divergence [[texture(1)]], texture2d<float, access::write> pressure [[texture(2)]], uint2 grid_index [[thread_position_in_grid]]) {

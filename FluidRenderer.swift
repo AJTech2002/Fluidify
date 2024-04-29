@@ -14,7 +14,7 @@ class FluidRenderer {
     static var instance : FluidRenderer!
 
     let metalDevice : MTLDevice
-    var output : MTLTexture?
+    var velocityTexture : MTLTexture?
     
     // Stages & Required Compute Shaders
     let pencilInputCompute : Compute
@@ -31,6 +31,8 @@ class FluidRenderer {
     let clearDivergenceSolver : Compute
     
     let boundsSolver : Compute
+    
+    let initialImage : Compute
     
     init (metalDevice : MTLDevice) {
         self.metalDevice = metalDevice
@@ -50,24 +52,41 @@ class FluidRenderer {
         
         boundsSolver = Compute(kernel: "set_bnds", metalDevice: metalDevice)
         
+        initialImage = Compute(kernel: "load_image", metalDevice: metalDevice)
+        
         FluidRenderer.instance = self
 
         
     }
     
+    var output: MTLTexture?
+    
+    var firstFrame : Bool = true
+    
     func setOutputTexture (output : MTLTexture?) {
         self.output = output
-        if (self.output != nil) {
+        
+        let textureDescriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .rgba16Float,
+                                                                         width: output!.width,
+                                                                         height: output!.height,
+                                                                         mipmapped: false)
+        textureDescriptor.usage = [.shaderWrite, .shaderRead, .renderTarget]
+    
+        
+        self.velocityTexture = metalDevice.makeTexture(descriptor: textureDescriptor)
+        
+        
+        if (self.velocityTexture != nil) {
             setupComputeShaders()
         }
     }
     
     func setupComputeShaders() {
-        diffuseNewVelocitiesTexture = createTextureWithSamePropertiesAs(inputTexture: output!, device: metalDevice)
+        diffuseNewVelocitiesTexture = createTextureWithSamePropertiesAs(inputTexture: velocityTexture!, device: metalDevice)
         diffuseSolver.setComputeTexture(name: "new_velocities", index: 1, value: diffuseNewVelocitiesTexture!)
         
-        divergenceTexture = createTextureWithSamePropertiesAs(inputTexture: output!, device: metalDevice)
-        pressureTexture = createTextureWithSamePropertiesAs(inputTexture: output!, device: metalDevice)
+        divergenceTexture = createTextureWithSamePropertiesAs(inputTexture: velocityTexture!, device: metalDevice)
+        pressureTexture = createTextureWithSamePropertiesAs(inputTexture: velocityTexture!, device: metalDevice)
         
         calculatDivergenceSolver.setComputeTexture(name: "divergence", index: 1, value: divergenceTexture!)
         
@@ -83,7 +102,7 @@ class FluidRenderer {
     
     func addInput (screenPoint : SIMD2<Float>, direction : SIMD2<Float>, radius : Float) {
        
-        pencilInputs.append( PencilInput(point: screenPoint, direction: direction/10.0, radius: radius) )
+        pencilInputs.append( PencilInput(point: screenPoint, direction: direction/5.0, radius: radius*2.0) )
         
     }
     
@@ -98,7 +117,7 @@ class FluidRenderer {
     
     func clearDivergence (commandBuffer: MTLCommandBuffer, view : MTKView) {
         
-        calculatDivergenceSolver.run(inOutTexture: output!, commandBuffer: commandBuffer, view: view)
+        calculatDivergenceSolver.run(inOutTexture: velocityTexture!, commandBuffer: commandBuffer, view: view)
         
         set_bnds(texture: divergenceTexture!, b: 0, commandBuffer: commandBuffer, view: view)
         set_bnds(texture: pressureTexture!, b: 0, commandBuffer: commandBuffer, view: view)
@@ -108,9 +127,9 @@ class FluidRenderer {
             set_bnds(texture: pressureTexture!, b: 0, commandBuffer: commandBuffer, view: view)
         }
         
-        clearDivergenceSolver.run(inOutTexture: output!, commandBuffer: commandBuffer, view: view)
-        set_bnds(texture: output!, b:1, commandBuffer: commandBuffer, view: view)
-        set_bnds(texture: output!, b: 2, commandBuffer: commandBuffer, view: view)
+        clearDivergenceSolver.run(inOutTexture: velocityTexture!, commandBuffer: commandBuffer, view: view)
+        set_bnds(texture: velocityTexture!, b:1, commandBuffer: commandBuffer, view: view)
+        set_bnds(texture: velocityTexture!, b: 2, commandBuffer: commandBuffer, view: view)
     }
     
     func runCompute(commandBuffer : MTLCommandBuffer, view: MTKView) {
@@ -118,22 +137,27 @@ class FluidRenderer {
         let currentTime = CACurrentMediaTime()
         let deltaTime = Float(currentTime - previousTime)
         previousTime = currentTime
-        //
+        
+        if (firstFrame) {
+
+            loadTexture(named: "procreate-logo", into: output!, device: metalDevice)
+            
+            firstFrame = false
+        }
+        
         
 //        addInput(screenPoint: float2(0.5, 0.5), direction: float2(-1.0, -1.0), radius: 20)
-//        
+     
         
-        if (output != nil) {
+        if (velocityTexture != nil) {
             for pencilInput in pencilInputs {
-//                print("Pressure : \(pencilInput.radius)")
-//                print("Direction : \(pencilInput.direction.x), \(pencilInput.direction.y)")
-//                print("Pos : \(pencilInput.point.x), \(pencilInput.point.y)")
-                // Add Inputs
+
                 pencilInputCompute.setComputeBuffer(name: "pencil_input", index: 0, value: pencilInput)
                 
+                pencilInputCompute.setComputeTexture(name: "output", index: 1, value: output!)
                 
                 // Output Texture to be Blitted After
-                pencilInputCompute.run(inOutTexture: output!, commandBuffer: commandBuffer, view: view)
+                pencilInputCompute.run(inOutTexture: velocityTexture!, commandBuffer: commandBuffer, view: view)
                 
                 
             }
@@ -141,21 +165,23 @@ class FluidRenderer {
             
             // ---- DIFFUSION ----
             
-            // Diffusion Setup - Clear the new velocities texture
-            clearTexture(texture: diffuseNewVelocitiesTexture!, clearColor: MTLClearColor(red: 0.0, green: 0.0, blue: 0.0, alpha: 0.0), commandBuffer: commandBuffer, device: metalDevice)
             
             diffuseSolver.setComputeBuffer(name: "diffusion_properties", index: 0, value: DiffusionProperties(dt: deltaTime, diffusionRate: 0.0001))
+           
+            clearTexture(texture: diffuseNewVelocitiesTexture!, clearColor: MTLClearColor(red: 0.0, green: 0.0, blue: 0.0, alpha: 0.0), commandBuffer: commandBuffer, device: metalDevice)
             
             // Gauss-Seidel solver for diffusion of velocities
             for _ in 0...20 {
-                diffuseSolver.run(inOutTexture: output!, commandBuffer: commandBuffer, view: view)
+                diffuseSolver.run(inOutTexture: velocityTexture!, commandBuffer: commandBuffer, view: view)
             }
             
-            // Copy new velocities to output texture
-            blitTexture(sourceTexture: diffuseNewVelocitiesTexture!, destinationTexture: output!, commandBuffer: commandBuffer, device: metalDevice)
             
-            set_bnds(texture: output!, b: 1, commandBuffer: commandBuffer, view: view)
-            set_bnds(texture: output!, b: 2, commandBuffer: commandBuffer, view: view)
+            
+            // Copy new velocities to output texture
+            blitTexture(sourceTexture: diffuseNewVelocitiesTexture!, destinationTexture: velocityTexture!, commandBuffer: commandBuffer, device: metalDevice)
+            
+            set_bnds(texture: velocityTexture!, b: 1, commandBuffer: commandBuffer, view: view)
+            set_bnds(texture: velocityTexture!, b: 2, commandBuffer: commandBuffer, view: view)
             
             // --- CLEAR DIVERGENCE ---
             clearDivergence(commandBuffer: commandBuffer, view: view)
@@ -163,12 +189,18 @@ class FluidRenderer {
             // --- ADVECTION ---
             advectionSolver.setComputeBuffer(name: "diffusion_properties", index: 0, value: DiffusionProperties(dt: deltaTime, diffusionRate: 0.0001))
             
-         
-            
-            advectionSolver.run(inOutTexture: output!, commandBuffer: commandBuffer, view: view)
-            
+
+            advectionSolver.setComputeTexture(name: "advectTexture", index: 1, value: output!)
+            advectionSolver.run(inOutTexture: velocityTexture!, commandBuffer: commandBuffer, view: view)
             set_bnds(texture: output!, b: 1, commandBuffer: commandBuffer, view: view)
             set_bnds(texture: output!, b: 2, commandBuffer: commandBuffer, view: view)
+
+            
+            advectionSolver.setComputeTexture(name: "advectTexture", index: 1, value: velocityTexture!)
+            advectionSolver.run(inOutTexture: velocityTexture!, commandBuffer: commandBuffer, view: view)
+            
+            set_bnds(texture: velocityTexture!, b: 1, commandBuffer: commandBuffer, view: view)
+            set_bnds(texture: velocityTexture!, b: 2, commandBuffer: commandBuffer, view: view)
             
             // --- CLEAR DIVERGENCE ---
             clearDivergence(commandBuffer: commandBuffer, view: view)
